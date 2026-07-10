@@ -96,21 +96,6 @@ Once launched, GitSeek presents an **interactive menu** in your terminal. Simply
 ```bash
 python GitSeek.py
 ```
-
-**Example flow:**
-
-```
-Enter GitHub username: ankubyte
-
-[1] View Profile Info
-[2] View Followers
-[3] Explore Repositories
-[4] View Top Repositories
-[5] Exit
-
-Select an option: 1
-```
-
 ### What you can do:
 
 - 🔎 Look up any public GitHub username
@@ -119,29 +104,6 @@ Select an option: 1
 - 📁 List and inspect public repositories
 - 🌟 Get a user's top repositories sorted by stars
 - ❌ Handle invalid usernames or failed API calls without crashing
-
----
-
-## 📂 Project Structure
-
-```
-GitSeek/
-│
-├── GitSeek.py          # Main entry point of the tool
-├── requirements.txt     # Project dependencies
-├── README.md            # Project documentation
-├── modules/              # Core logic (profile, repos, followers, etc.)
-│   ├── profile.py
-│   ├── repositories.py
-│   └── followers.py
-├── utils/                # Helper utilities (UA generation, formatting, etc.)
-│   └── helpers.py
-└── LICENSE
-```
-
-> 💡 *Adjust the structure above to match your actual file layout.*
-
----
 
 ## 🗺️ Roadmap
 
