@@ -128,6 +128,21 @@ def get_repos(username):
 def main():
     os.system('cls' if os.name=='nt' else 'clear')
     while True:
+        logo = f"""
+{cyan}
+╭──────────────────────────────────╮
+│  GITSEEK :: GITHUB INTELLIGENCE  │
+╰──────────────────────────────────╯
+
+[+] Loading modules...
+[+] Connecting to GitHub API...
+[+] Scanner ready.
+
+      >>> START SESSION <<<
+{reset}
+"""
+
+        print(logo)
         text_input=input(f'{yellow}Enter Github Username:{reset} ').strip().lower()
         # print(text_input)
         if len(text_input)==0:
