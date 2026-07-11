@@ -2,8 +2,10 @@ import requests,json,shutil,os
 from user_agent import generate_user_agent
 from colorama import Fore as F1,init
 from pathlib import Path
+from datetime import datetime
 
 init(autoreset=True)
+userAgent=generate_user_agent()
 green=F1.LIGHTGREEN_EX
 blue=F1.LIGHTBLUE_EX
 cyan=F1.LIGHTCYAN_EX
@@ -11,13 +13,22 @@ magenta=F1.LIGHTMAGENTA_EX
 red=F1.LIGHTRED_EX
 reset=F1.RESET
 yellow=F1.LIGHTYELLOW_EX
+
+
+
+def timech(iso_time):
+
+    dt = datetime.fromisoformat(iso_time.replace("Z", "+00:00"))
+
+    return dt.strftime("%d %b %Y")
+
 def github_profile(username:str):
 
     information={}
 
     url=f"https://api.github.com/users/{username}"
     head={
-        "user-agent" : generate_user_agent()
+        "user-agent" : userAgent
     }
     req=requests.get(url=url,headers=head,timeout=5)
     if req.status_code!=200:
@@ -28,6 +39,13 @@ def github_profile(username:str):
     else:
 
         response=req.json()
+        create_date=timech(response.get("created_at"))
+        last_update=  timech(response.get("updated_at"))
+        email=''
+        try:
+            email=get_email(username)
+        except Exception as e:
+            email=e
 
         information["[→] Username"] = response.get("login")
 
@@ -45,7 +63,7 @@ def github_profile(username:str):
 
         information["[→] Location"] = response.get("location")
 
-        information["[→] Email"] = response.get("email")
+        information["[→] Email"] = email
 
         information["[→] Blog"] = response.get("blog")
 
@@ -59,41 +77,86 @@ def github_profile(username:str):
 
         information["[→] Public Gists"] = response.get("public_gists")
 
-        information["[→] Account Created"] = response.get("created_at")
+        information["[→] Account Created"] = create_date
 
-        information["[→] Last Updated"] = response.get("updated_at")
+        information["[→] Last Updated"] = last_update
 
     return information
+
+# github_profile('ankubyte')
+
+def get_top_repo(username):
+    repo_list={}
+    url=f"https://api.github.com/users/{username}/repos"
+    head={
+        "user-agent" : generate_user_agent()
+    }
+    req=requests.get(url=url,headers=head)
+
+    if req.status_code!=200:
+        repo_list["[x] Error"] = f"Status Code: {req.status_code}, Response: {req.json()}"
+    else:
+        resp=req.json()
+        for i in resp:
+            repo_list[i['name']] = i['stargazers_count']
+
+    return dict(sorted(repo_list.items(),key=lambda x: x[1],reverse=True))
+
+def get_email(username):
+    repo=get_top_repo(username)
+    email=[]
+    if len(repo)==0:
+        email.append('0')
+    else:
+        for i,j in list(repo.items())[:1]:
+            # print(i)
+            projext=i
+        url=f'https://api.github.com/repos/{username}/{projext}/commits'
+        head={
+            "user-agent" : userAgent
+        }
+        req=requests.get(url=url,headers=head)
+        
+        if req.status_code!=200:
+            email.append(f'unknown')
+
+        else:
+            resp=req.json()
+            email.append( resp[0].get("commit", {}).get("author", {}).get("email"))
+
+    return email
 
 def get_followers(userame):
 
     url=f"https://api.github.com/users/{userame}/followers"
     head={
-        "user-agent" : generate_user_agent()
+        "user-agent" : userAgent
     }
     req=requests.get(url=url,headers=head)
-    # print(req.status_code)
-    # print(req.json())
+
     if req.status_code!=200:
         return f"[-] {red}Error to get followers{reset}"
     else:
         resp=req.json()
-        tt=f'Top Followers of user: {userame}\n'
-        filename = Path(f"{userame}_followers.txt")
+        if len(resp)==0:
+            return f"[-]{magenta} {userame} Don't have Any follower"
+        else:
+            tt=f'Top Followers of user: {userame}\n'
+            filename = Path(f"{userame}_followers.txt")
 
-        with filename.open("w", encoding="utf-8") as f:
-            f.write(tt+'\n')
-            for i, j in enumerate(resp, start=1):
-                f.write(f"{i} = {j['login']}\n")
+            with filename.open("w", encoding="utf-8") as f:
+                f.write(tt+'\n')
+                for i, j in enumerate(resp, start=1):
+                    f.write(f"{i} = {j['login']}\n")
 
-        return f"[+] {green}Followers fetched and saved at:{reset} {filename.resolve()}"
-    
+            return f"[+] {green}Followers fetched and saved at:{reset} {filename.resolve()}"
+        
 
 def get_repos(username):
     text=''
     url=f"https://api.github.com/users/{username}/repos"
     head={
-        "user-agent" : generate_user_agent()
+        "user-agent" : userAgent
     }
     req=requests.get(url=url,headers=head)
 
@@ -170,16 +233,17 @@ def main():
             f"""{cyan}[+]{reset} {magenta}Please choose an operation:{reset}
 
     {green}[1]{reset} --> Fetch Top Followers
-    {green}[2]{reset} --> Fetch All Repositories
-    {green}[3]{reset} --> Restart / again check 
-    {red}[4]{reset} --> Exit
+    {green}[2]{reset} --> Get Top Repos
+    {green}[3]{reset} --> Fetch All Repositories
+    {green}[4]{reset} --> Restart / again check 
+    {red}[5]{reset} --> Exit
         """)
         
         while True:
             print(git_cli)
 
             choice=input(f'{yellow}➜ Enter your choice (1/2/3/4): {reset}').strip()
-            if choice not in ["1", "2", "3","4"]:
+            if choice not in ["1", "2", "3","4","5"]:
                 print(f"❌{red}Invalid choice!{reset}")
                 print(git_cli)
 
@@ -188,11 +252,22 @@ def main():
                     print(get_followers(username))
                     continue
                 elif choice =='2':
+                    top=get_top_repo(username)
+                    if len(top)==0:
+                        print(f'[-]{red} No repo avilable\n')
+                    else:
+                        print(f'[+]{cyan}Top 5 Repo:{reset}')
+                        for x,y in list(top.items())[:4]:
+                            print(f'[→]{yellow}Name:{reset}{x} ||{yellow}Total Stars: {reset}{y}')
+                        print()
+                    continue
+                            
+                elif choice =='3':
                     print(get_repos(username))
                     continue
-                elif choice=='3':
-                    break
                 elif choice=='4':
+                    break
+                elif choice=='5':
                     print(f'{green} Thanks for using\n{reset} Please Join: {cyan} https://t.me/ankubyte{reset}')
                     exit()
 
