@@ -81,7 +81,9 @@ cd GitSeek
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Run the tool
+# 4. update Tool
+git pull
+# 5. Run the tool
 python GitSeek.py
 ```
 
